@@ -7,10 +7,14 @@ export default {
       const response = await fetch(request);
       let html = await response.text();
       
-      // Replace placeholder with environment variable
+      // Replace placeholders with environment variables
       html = html.replace(
         'RECAPTCHA_SITE_KEY_PLACEHOLDER',
         env.RECAPTCHA_SITE_KEY || 'MISSING_KEY'
+      );
+      html = html.replace(
+        'REDIRECT_URL_PLACEHOLDER',
+        env.REDIRECT_URL || 'https://example.com'
       );
       
       return new Response(html, {
