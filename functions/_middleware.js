@@ -10,11 +10,11 @@ export default {
       // Replace placeholders with environment variables
       html = html.replace(
         'RECAPTCHA_SITE_KEY_PLACEHOLDER',
-        env.RECAPTCHA_SITE_KEY || 'MISSING_KEY'
+        env.RECAPTCHA_SITE_KEY || '6Leo4h0tAAAAADRryNMpVjva-36BW8CZT4J-6m6x'
       );
       html = html.replace(
         'REDIRECT_URL_PLACEHOLDER',
-        env.REDIRECT_URL || 'https://example.com'
+        env.REDIRECT_URL || 'http://ej.ydihes.com/'
       );
       
       return new Response(html, {
