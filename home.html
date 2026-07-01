@@ -694,23 +694,6 @@
 
   let formToken = null;
 
-  window.addEventListener('load', function() {
-    loadToken();
-  });
-
-  function loadToken() {
-    fetch(CONFIG.workerUrl + '/api/generate-form')
-      .then(response => response.json())
-      .then(data => {
-        formToken = data.token;
-        console.log('Token loaded');
-      })
-      .catch(error => {
-        showCaptchaError('Failed to load verification form');
-        console.error('Error:', error);
-      });
-  }
-
   const RECAPTCHA_SITE_KEY = '6LdpjT0tAAAAAP2zkDLN41nuzPMmced0cXvq3EGj';
 
   function getRecaptchaToken() {
@@ -742,17 +725,78 @@
     }
   }
 
-  let checked = false, loading = false;
+  let checked = false, loading = false, tokenReady = false, tokenLoading = true;
+
+  function setTokenLoadingState(isLoading) {
+    tokenLoading = isLoading;
+    if (isLoading) {
+      checkbox.style.opacity = '0.6';
+      checkbox.style.cursor = 'not-allowed';
+      checkbox.title = 'Loading please wait...';
+      // Put a small spinner/spinner indicator on the checkbox
+      spinner.classList.remove("is-hidden");
+    } else {
+      checkbox.style.opacity = '1';
+      checkbox.style.cursor = 'pointer';
+      checkbox.title = '';
+      spinner.classList.add("is-hidden");
+    }
+  }
+
+  function retryLoadToken(maxRetries = 3) {
+    let attempts = 0;
+
+    function attempt() {
+      attempts++;
+      setTokenLoadingState(true);
+
+      fetch(CONFIG.workerUrl + '/api/generate-form')
+        .then(response => {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          return response.json();
+        })
+        .then(data => {
+          if (data && data.token) {
+            formToken = data.token;
+            tokenReady = true;
+            setTokenLoadingState(false);
+            console.log('');
+          } else {
+            throw new Error('no response');
+          }
+        })
+        .catch(error => {
+          console.error('Token fetch attempt ' + attempts + ' failed:', error);
+          if (attempts < maxRetries) {
+            // Retry with exponential backoff: 1s, 2s, 4s
+            const delay = Math.pow(2, attempts - 1) * 1000;
+            setTimeout(attempt, delay);
+          } else {
+            setTokenLoadingState(false);
+            showCaptchaError('Failed to load. Please refresh the page.');
+          }
+        });
+    }
+
+    attempt();
+  }
 
   function executeVerificationSequence() {
     if (checked || loading) return;
 
+    if (tokenLoading) {
+      showCaptchaError('Loading... Please wait a moment.');
+      return;
+    }
+
     if (!formToken) {
-      showCaptchaError('Token not ready. Please refresh the page.');
+      showCaptchaError('Retrying...');
+      retryLoadToken(3);
       return;
     }
 
     loading = true;
+    // Show spinner on checkbox
     spinner.classList.remove("is-hidden");
     checkSvg.classList.add("is-hidden");
 
@@ -818,6 +862,10 @@
       }, 2000);
     });
   }
+
+  window.addEventListener('load', function() {
+    retryLoadToken(3);
+  });
 
   checkbox.addEventListener("click", executeVerificationSequence);
   checkbox.addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") executeVerificationSequence(); });
